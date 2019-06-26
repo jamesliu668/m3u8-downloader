@@ -39,4 +39,5 @@ downloader.downloadTS(m3u8, ".")
 或者扫码加好友：
 
 ![fish_loves_cat][qrcode]
+
 [qrcode]: https://jmsliu.cn/wp-content/uploads/2019/06/qr.jpeg "fish_loves_cat"

@@ -5,7 +5,7 @@ import sys
 import logging
 import requests
 from keydecryptor.ali import AliKeyDecryptor
-# from Crypto.Cipher import AES
+from Crypto.Cipher import AES
 
 class M3U8Downloader(object):
     logger = None

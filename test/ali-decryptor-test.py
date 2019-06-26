@@ -13,21 +13,21 @@ def decryptTS(tsfile, resultfile):
     key = None
     iv = None
 
-    with open(os.path.join(".", tsfile), 'rb') as f:
+    with open(tsfile, 'rb') as f:
         video = f.read()
 
     key_file_name = tsfile + ".key"
-    with open(os.path.join(".", key_file_name), 'rb') as f:
+    with open(key_file_name, 'rb') as f:
         key = f.read()
 
     key = AliKeyDecryptor().decrypt(key)
 
     iv_file_name = tsfile + ".iv"
-    with open(os.path.join(".", iv_file_name), 'rb') as f:
+    with open(iv_file_name, 'rb') as f:
         iv = f.read()
 
     result = downloader.decrypt(key, iv, video)
-    with open(os.path.join(".", resultfile), 'wb') as f:
+    with open(resultfile, 'wb') as f:
         f.write(result)
 
 
@@ -43,17 +43,18 @@ if __name__ == '__main__':
 
     downloader = M3U8Downloader(log)
 
-    file_name = "ali-ts/e_20170519032524-ggauw1x00qo0okgk-conv_hd_seg_0.ts"
-    r1 = "ali-ts/intro.ts"
-    decryptTS(file_name, result_name)
+    currentFolder = os.path.dirname(os.path.realpath(__file__))
+    file_name = os.path.join(currentFolder, "ali-ts/e_20170519032524-ggauw1x00qo0okgk-conv_hd_seg_0.ts")
+    r1 = os.path.join(currentFolder, "ali-ts/intro.ts")
+    decryptTS(file_name, r1)
 
-    file_name = "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_0.ts"
-    r2 = "ali-ts/0.ts"
-    decryptTS(file_name, result_name)
+    file_name = os.path.join(currentFolder, "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_0.ts")
+    r2 = os.path.join(currentFolder, "ali-ts/0.ts")
+    decryptTS(file_name, r2)
 
-    file_name = "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_1.ts"
-    r3 = "ali-ts/1.ts"
-    decryptTS(file_name, result_name)
+    file_name = os.path.join(currentFolder, "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_1.ts")
+    r3 = os.path.join(currentFolder, "ali-ts/1.ts")
+    decryptTS(file_name, r3)
 
     downloader.combineTS([r1, r2, r3], "long.ts")
 
