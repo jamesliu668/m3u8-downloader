@@ -36,8 +36,6 @@ downloader.downloadTS(m3u8, ".")
 ## 关于我们
 如果大家对本项目有任何建议，想法或者问题，可以添加微信号：`fish_loves_cat`
 
-或者扫码加好友：
+或者扫码联系船长：
 
-![fish_loves_cat][qrcode]
-
-[qrcode]: https://jmsliu.cn/wp-content/uploads/2019/06/qr.jpeg "fish_loves_cat"
+<img src="https://jmsliu.cn/wp-content/uploads/2019/06/qr.jpg" alt="fish_loves_cat" width="200" height="200">
