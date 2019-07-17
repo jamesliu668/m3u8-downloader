@@ -65,13 +65,9 @@ class M3U8Downloader(object):
         except Exception as e:
             print(e)
 
+    # deprecated, please use download, parseTS and saveToFile instead
     def downloadTS(self, m3u8, folderName, numberOfKeys=10000, numberOfIVs=10000, numberOfTSs=10000):
         try:
-            # req = self.session.get(url, headers=headers)
-            # req.raise_for_status()
-            # req.encoding = req.apparent_encoding
-            # print(req.text)
-
             content = m3u8.split('\n')
             currentKey = None
             currentIV = None
@@ -123,6 +119,61 @@ class M3U8Downloader(object):
                     self.logger.info("skip: " + line)
         except Exception as e:
             self.logger.error(e)
+
+    def download(self, url):
+        try:
+            req = self.session.get(url, headers=self.headers)
+            req.raise_for_status()
+            return req.content
+        except Exception as e:
+            self.logger.error(e)
+
+    def parseTS(self, m3u8Content, numberOfKeys=10000, numberOfIVs=10000, numberOfTSs=10000):
+        try:
+            content = m3u8Content.split('\n')
+            currentKey = None
+            currentIV = None
+
+            keyNo = 0
+            viNo = 0
+            tsNo = 0
+
+            results = []
+
+            for line in content:
+                if line[:10] == "#EXT-X-KEY":
+                    if keyNo < numberOfKeys:
+                        keyNo = keyNo + 1
+                        reg = r"URI=\"([^\"].*?)\""
+                        result = re.findall(reg, line)
+                        if len(result) > 0:
+                            dic = {"key": result[0]}
+                            results.append(dic)
+
+                    if viNo < numberOfIVs:
+                        viNo = viNo + 1
+                        reg = r"IV=0x(.*)"
+                        result = re.findall(reg, line)
+                        if len(result) > 0:
+                            dic = {"iv": result[0]}
+                            results.append(dic)
+                elif len(line) > 0 and line[:1] != "#":
+                    if tsNo < numberOfTSs:
+                        tsNo = tsNo + 1
+                        dic = {"ts": line}
+                        results.append(dic)
+                elif line[:1] == "#EXT-X-ENDLIST":
+                    self.logger.info("Reach m3u8 data end!")
+                    break
+                else:
+                    self.logger.info("skip: " + line)
+            return results
+        except Exception as e:
+            self.logger.error(e)
+
+    def saveToFile(self,content, filename, folderName):
+        with open(os.path.join(folderName, filename), 'wb') as f:
+            f.write(content)
 
     def decrypt(self, key, iv, content):
         self.logger.info("Start decrypting...")

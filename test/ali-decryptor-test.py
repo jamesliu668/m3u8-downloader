@@ -8,22 +8,20 @@ sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from m3u8downloader.downloader import M3U8Downloader
 from keydecryptor.ali import AliKeyDecryptor
 
-def decryptTS(tsfile, resultfile):
+def decryptTS(keyFile, ivFile, tsFile, resultfile):
     video = None
     key = None
     iv = None
 
-    with open(tsfile, 'rb') as f:
+    with open(tsFile, 'rb') as f:
         video = f.read()
 
-    key_file_name = tsfile + ".key"
-    with open(key_file_name, 'rb') as f:
+    with open(keyFile, 'rb') as f:
         key = f.read()
 
     key = AliKeyDecryptor().decrypt(key)
 
-    iv_file_name = tsfile + ".iv"
-    with open(iv_file_name, 'rb') as f:
+    with open(ivFile, 'rb') as f:
         iv = f.read()
 
     result = downloader.decrypt(key, iv, video)
@@ -44,18 +42,57 @@ if __name__ == '__main__':
     downloader = M3U8Downloader(log)
 
     currentFolder = os.path.dirname(os.path.realpath(__file__))
-    file_name = os.path.join(currentFolder, "ali-ts/e_20170519032524-ggauw1x00qo0okgk-conv_hd_seg_0.ts")
-    r1 = os.path.join(currentFolder, "ali-ts/intro.ts")
-    decryptTS(file_name, r1)
+    ts = os.path.join(currentFolder, "ali-ts/0.ts")
+    key = os.path.join(currentFolder, "ali-ts/0.key")
+    iv = os.path.join(currentFolder, "ali-ts/0.iv")
+    r0 = os.path.join(currentFolder, "ali-ts/r0.ts")
+    decryptTS(key, iv, ts, r0)
 
-    file_name = os.path.join(currentFolder, "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_0.ts")
-    r2 = os.path.join(currentFolder, "ali-ts/0.ts")
-    decryptTS(file_name, r2)
+    ts = os.path.join(currentFolder, "ali-ts/1.ts")
+    key = os.path.join(currentFolder, "ali-ts/1.key")
+    iv = os.path.join(currentFolder, "ali-ts/1.iv")
+    r1 = os.path.join(currentFolder, "ali-ts/r1.ts")
+    decryptTS(key, iv, ts, r1)
 
-    file_name = os.path.join(currentFolder, "ali-ts/e_20170630095028-3xsfwyxw20cgwws8-conv_hd_seg_1.ts")
-    r3 = os.path.join(currentFolder, "ali-ts/1.ts")
-    decryptTS(file_name, r3)
+    ts = os.path.join(currentFolder, "ali-ts/2.ts")
+    iv = os.path.join(currentFolder, "ali-ts/2.iv")
+    r2 = os.path.join(currentFolder, "ali-ts/r2.ts")
+    decryptTS(key, iv, ts, r2)
 
-    downloader.combineTS([r1, r2, r3], "long.ts")
+    ts = os.path.join(currentFolder, "ali-ts/3.ts")
+    iv = os.path.join(currentFolder, "ali-ts/3.iv")
+    r3 = os.path.join(currentFolder, "ali-ts/r3.ts")
+    decryptTS(key, iv, ts, r3)
 
-    
+    ts = os.path.join(currentFolder, "ali-ts/4.ts")
+    iv = os.path.join(currentFolder, "ali-ts/4.iv")
+    r4 = os.path.join(currentFolder, "ali-ts/r4.ts")
+    decryptTS(key, iv, ts, r4)
+
+    ts = os.path.join(currentFolder, "ali-ts/5.ts")
+    iv = os.path.join(currentFolder, "ali-ts/5.iv")
+    r5 = os.path.join(currentFolder, "ali-ts/r5.ts")
+    decryptTS(key, iv, ts, r5)
+
+    ts = os.path.join(currentFolder, "ali-ts/6.ts")
+    iv = os.path.join(currentFolder, "ali-ts/6.iv")
+    r6 = os.path.join(currentFolder, "ali-ts/r6.ts")
+    decryptTS(key, iv, ts, r6)
+
+    ts = os.path.join(currentFolder, "ali-ts/7.ts")
+    iv = os.path.join(currentFolder, "ali-ts/7.iv")
+    r7 = os.path.join(currentFolder, "ali-ts/r7.ts")
+    decryptTS(key, iv, ts, r7)
+
+    ts = os.path.join(currentFolder, "ali-ts/8.ts")
+    iv = os.path.join(currentFolder, "ali-ts/8.iv")
+    r8 = os.path.join(currentFolder, "ali-ts/r8.ts")
+    decryptTS(key, iv, ts, r8)
+
+    ts = os.path.join(currentFolder, "ali-ts/9.ts")
+    iv = os.path.join(currentFolder, "ali-ts/9.iv")
+    r9 = os.path.join(currentFolder, "ali-ts/r9.ts")
+    decryptTS(key, iv, ts, r9)
+
+    finalVideo = os.path.join(currentFolder, "ali-ts/long.ts")
+    downloader.combineTS([r0, r1, r2, r3, r4, r5, r6, r7, r8, r9], finalVideo)
