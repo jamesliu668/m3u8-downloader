@@ -2,7 +2,7 @@
 本测试工具包含在项目开发过程中和开发有的一些测试用例。
 
 ## ali-downloader-test
-阿里大学TS视频下载测试工具。可以使用以下步骤使用测试工具：
+阿里大学TS视频下载测试工具。可以根据以下步骤使用测试工具：
 
 1. 登陆阿里大学找一个视频页面
 2. 拷贝当前页面的Cookie信息
@@ -21,6 +21,24 @@
 ```
 ffmpeg -y -i long.ts -c:v libx264 -c:a copy -bsf:a aac_adtstoasc long.mp4
 ```
+
+## newcoder-downloader-test
+牛客网的TS视频下载测试工具。可以根据以下步骤使用测试工具：
+
+1. 登陆牛客网找一个视频页面
+2. 系统必须安装Selenium和Chrome WebDriver
+3. 拷贝当前页面的Cookie信息，Referer和User-Agent
+4. 拷贝当前页面URL
+
+## newcoder-decryptor-test
+牛客网的TS视频，以及密钥解密测试工具。 该测试工具主要：
+
+1. 下载对应的视频信息
+2. 解密视频信息
+3. 从视频信息中获取加密密钥的密钥
+4. 解密TS的加密密钥
+5. 解密TS文件
+6. 合并TS文件
 
 
 ## 关于我们
