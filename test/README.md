@@ -40,6 +40,15 @@ ffmpeg -y -i long.ts -c:v libx264 -c:a copy -bsf:a aac_adtstoasc long.mp4
 5. 解密TS文件
 6. 合并TS文件
 
+## combine-ts
+合并安卓平板电脑中腾讯视频极速版的离线视频文件。在安卓平板上安装腾讯视频极速版以后，下载需要看的视频。随后在平板电脑上安装Termux（虚拟Linux终端），并安装OpenSSH和Python。上传该项目后使用以下命令可以合并TS离线视频文件，并保存到相册文件夹中。
+
+```
+ln -s qqvideolite /sdcard/Android/data/com.tencent.videolite.android/files/videos
+python combine-ts.py ~/qqvideolite/r075832cr9b.322003.hls /sdcard/DCIM/result.ts
+```
+
+[《保存腾讯视频离线视频》](https://jmsliu.cn/others/m3u8%e6%b5%81%e8%a7%86%e9%a2%91%e6%95%b0%e6%8d%ae%e7%88%ac%e8%99%ab%e5%a4%96%e4%bc%a0%e4%ba%8c%ef%bc%9a%e4%bf%9d%e5%ad%98%e8%85%be%e8%ae%af%e8%a7%86%e9%a2%91%e7%a6%bb%e7%ba%bf%e8%a7%86%e9%a2%91.html "保存腾讯视频离线视频")
 
 ## 关于我们
 如果大家对本项目有任何建议，想法或者问题，可以添加微信号：`fish_loves_cat`
