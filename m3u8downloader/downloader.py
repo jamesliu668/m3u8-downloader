@@ -4,6 +4,7 @@ import re
 import sys
 import logging
 import requests
+from urllib.parse import urlparse
 from keydecryptor.ali import AliKeyDecryptor
 from Crypto.Cipher import AES
 
@@ -11,6 +12,8 @@ class M3U8Downloader(object):
     logger = None
     headers = None
     session = None
+    proxies = None
+    rootURL = None
 
     def __init__(self, logger, headers=None):
         self.logger = logger
@@ -19,9 +22,13 @@ class M3U8Downloader(object):
     def setHeaders(self, headers):
         self.headers = headers
 
+    def setProxy(self, proxies):
+        self.proxies = proxies
+
     def downloadM3U8(self, m3u8URL, bandwith=None):
         try:
-            req = self.session.get(m3u8URL, headers=self.headers)
+            self.rootURL = m3u8URL
+            req = self.session.get(m3u8URL, headers=self.headers, proxies=self.proxies)
             req.raise_for_status()
             req.encoding = req.apparent_encoding
 
@@ -56,7 +63,8 @@ class M3U8Downloader(object):
                             currentM3U8URL = m3u8List[key]
                 
                 #download the real m3u8
-                req = self.session.get(currentM3U8URL, headers=self.headers)
+                currentM3U8URL = self.formatURL(currentM3U8URL)
+                req = self.session.get(currentM3U8URL, headers=self.headers, proxies=self.proxies)
                 req.raise_for_status()
                 req.encoding = req.apparent_encoding
                 return req.text
@@ -84,7 +92,7 @@ class M3U8Downloader(object):
                         result = re.findall(reg, line)
                         if len(result) > 0:
                             keyURL = result[0]
-                            req = self.session.get(keyURL, headers=self.headers)
+                            req = self.session.get(keyURL, headers=self.headers, proxies=self.proxies)
                             req.raise_for_status()
                             currentKey = req.content
 
@@ -98,7 +106,7 @@ class M3U8Downloader(object):
                     if tsNo < numberOfTSs:
                         tsNo = tsNo + 1
                         url = line
-                        req = self.session.get(url, headers=self.headers)
+                        req = self.session.get(url, headers=self.headers, proxies=self.proxies)
                         req.raise_for_status()
                         file_name = url.split('/')[-1].split('?')[0]
                         with open(os.path.join(folderName, file_name), 'wb') as f:
@@ -122,7 +130,8 @@ class M3U8Downloader(object):
 
     def download(self, url):
         try:
-            req = self.session.get(url, headers=self.headers)
+            url = self.formatURL(url)
+            req = self.session.get(url, headers=self.headers, proxies=self.proxies)
             req.raise_for_status()
             return req.content
         except Exception as e:
@@ -171,9 +180,16 @@ class M3U8Downloader(object):
         except Exception as e:
             self.logger.error(e)
 
-    def saveToFile(self,content, filename, folderName):
-        with open(os.path.join(folderName, filename), 'wb') as f:
+    # return ts file full path
+    def saveToFile(self, content, filename, folderPath):
+        if not os.path.exists(folderPath):
+            os.makedirs(folderPath)
+        
+        result = os.path.join(folderPath, filename)
+        with open(result, 'wb') as f:
             f.write(content)
+
+        return result
 
     def decrypt(self, key, iv, content):
         self.logger.info("Start decrypting...")
@@ -181,11 +197,39 @@ class M3U8Downloader(object):
         result = cryptor.decrypt(content)
         return result
 
-    def combineTS(self, tsList, fileName):
+    def combineTS(self, tsList, targetTSFileName):
         self.logger.info("Start combining {} ts files".format(len(tsList)))
-        outfile = open(fileName, 'wb')
+        outfile = open(targetTSFileName, 'wb')
         for i in tsList:
             infile = open(i, 'rb')
             outfile.write(infile.read())
             infile.close()
         outfile.close()
+
+    def formatURL(self, url):
+        rootURLObj = urlparse(self.rootURL)
+        url = url.strip()
+
+        if url[:4] == "http":
+            return url
+        elif url[:2] == "//":
+            return rootURLObj.scheme + ":" + url
+        elif url[:2] == "..":
+            count = url.count("../")
+            spliturl = url.split("/")
+            if count <= (len(spliturl) - count):
+                newurl = rootURLObj.scheme + "://" + rootURLObj.netloc
+                for i in range(count):
+                    newurl = newurl + "/" + spliturl[i+count]
+                for i in range(len(spliturl) - count*2):
+                    newurl = newurl + "/" + spliturl[count*2+i]
+                return newurl
+            else:
+                newurl= rootURLObj.scheme + "://" + rootURLObj.netloc + "/" + url.replace("../","")
+                return newurl
+        elif url[:1] == "/":
+            return rootURLObj.scheme + "://" + rootURLObj.netloc + url
+        elif url[:2] == "./":
+            pre_url = self.rootURL[0: (len(self.rootURL) - self.rootURL[::-1].index('/'))]
+            newurl = pre_url + url
+            return newurl
