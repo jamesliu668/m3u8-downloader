@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# python3
 import os
 import re
 import sys
@@ -137,7 +138,7 @@ class M3U8Downloader(object):
         except Exception as e:
             self.logger.error(e)
 
-    def parseTS(self, m3u8Content, numberOfKeys=10000, numberOfIVs=10000, numberOfTSs=10000):
+    def parseTS(self, m3u8Content, numberOfKeys=sys.maxsize, numberOfIVs=sys.maxsize, numberOfTSs=sys.maxsize):
         try:
             content = m3u8Content.split('\n')
             currentKey = None
