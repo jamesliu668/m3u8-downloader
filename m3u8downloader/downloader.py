@@ -230,7 +230,8 @@ class M3U8Downloader(object):
                 return newurl
         elif url[:1] == "/":
             return rootURLObj.scheme + "://" + rootURLObj.netloc + url
-        elif url[:2] == "./":
+        else:
+            # ./ or just index.html
             pre_url = self.rootURL[0: (len(self.rootURL) - self.rootURL[::-1].index('/'))]
             newurl = pre_url + url
             return newurl
