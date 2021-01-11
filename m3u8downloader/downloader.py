@@ -74,61 +74,6 @@ class M3U8Downloader(object):
         except Exception as e:
             print(e)
 
-    # deprecated, please use download, parseTS and saveToFile instead
-    def downloadTS(self, m3u8, folderName, numberOfKeys=10000, numberOfIVs=10000, numberOfTSs=10000):
-        try:
-            content = m3u8.split('\n')
-            currentKey = None
-            currentIV = None
-
-            keyNo = 0
-            viNo = 0
-            tsNo = 0
-
-            for line in content:
-                if line[:10] == "#EXT-X-KEY":
-                    if keyNo < numberOfKeys:
-                        keyNo = keyNo + 1
-                        reg = r"URI=\"([^\"].*?)\""
-                        result = re.findall(reg, line)
-                        if len(result) > 0:
-                            keyURL = result[0]
-                            req = self.session.get(keyURL, headers=self.headers, proxies=self.proxies)
-                            req.raise_for_status()
-                            currentKey = req.content
-
-                    if viNo < numberOfIVs:
-                        viNo = viNo + 1
-                        reg = r"IV=0x(.*)"
-                        result = re.findall(reg, line)
-                        if len(result) > 0:
-                            currentIV = result[0]
-                elif len(line) > 0 and line[:1] != "#":
-                    if tsNo < numberOfTSs:
-                        tsNo = tsNo + 1
-                        url = line
-                        req = self.session.get(url, headers=self.headers, proxies=self.proxies)
-                        req.raise_for_status()
-                        file_name = url.split('/')[-1].split('?')[0]
-                        with open(os.path.join(folderName, file_name), 'wb') as f:
-                            f.write(req.content)
-
-                        key_file_name = file_name + ".key"
-                        with open(os.path.join(folderName, key_file_name), 'wb') as f:
-                            f.write(currentKey)
-
-                        iv_file_name = file_name + ".iv"
-                        vi = bytes.fromhex(currentIV)
-                        with open(os.path.join(folderName, iv_file_name), 'wb') as f:
-                            f.write(vi)
-                elif line[:1] == "#EXT-X-ENDLIST":
-                    self.logger.info("Reach m3u8 end!")
-                    break
-                else:
-                    self.logger.info("skip: " + line)
-        except Exception as e:
-            self.logger.error(e)
-
     def download(self, url):
         try:
             url = self.formatURL(url)
