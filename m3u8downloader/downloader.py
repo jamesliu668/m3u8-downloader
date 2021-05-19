@@ -26,7 +26,9 @@ class M3U8Downloader(object):
     def setProxy(self, proxies):
         self.proxies = proxies
 
-    def downloadM3U8(self, m3u8URL, bandwith=None):
+    # Download the real m3u8 real content. 
+    # See: https://jmsliu.cn/others/m3u8%E6%B5%81%E8%A7%86%E9%A2%91%E6%95%B0%E6%8D%AE%E7%88%AC%E8%99%AB%E8%AF%A6%E8%A7%A3%E4%B8%80%EF%BC%9Am3u8%E8%A7%86%E9%A2%91%E6%96%87%E4%BB%B6%E8%AF%A6%E8%A7%A3.html#m3u8-file-level
+    def downloadM3U8(self, m3u8URL):
         try:
             self.rootURL = m3u8URL
             req = self.session.get(m3u8URL, headers=self.headers, proxies=self.proxies)
@@ -41,6 +43,7 @@ class M3U8Downloader(object):
                 currentM3U8URL = None
                 for line in content:
                     if line[:17] == "#EXT-X-STREAM-INF":
+                        self.logger.debug(f"Find bandwidth definition {line}")
                         regex = re.compile(r"BANDWIDTH=(\d*)", re.DOTALL|re.UNICODE)
                         result = regex.findall(line)
                         if len(result) > 0:
@@ -52,25 +55,24 @@ class M3U8Downloader(object):
                         if len(result) > 0:
                             currentName = result[0]
                     elif len(line) > 0 and line[:1] != "#":
+                        self.logger.debug(f"Find real m3u8 file {line}")
                         self.logger.info("Find {} m3u8 file for bandwidth {}".format(currentName, currentBW))
                         m3u8List[currentBW] = line
                         currentM3U8URL = line
                     else:
-                        self.logger.info("ignore: " + line)
+                        self.logger.debug("ignore: " + line)
 
-                if bandwith is not None:
-                    for key in m3u8List.keys():
-                        if int(key) > bandwith:
-                            currentM3U8URL = m3u8List[key]
+                for key in m3u8List.keys():
+                    self.logger.debug(f"Download bandwidth {key}bps m3u8: {m3u8List[key]}")
+                    url = self.formatURL(m3u8List[key])
+                    req = self.session.get(url, headers=self.headers, proxies=self.proxies)
+                    req.raise_for_status()
+                    m3u8List[key] = req.content
                 
-                #download the real m3u8
-                currentM3U8URL = self.formatURL(currentM3U8URL)
-                req = self.session.get(currentM3U8URL, headers=self.headers, proxies=self.proxies)
-                req.raise_for_status()
-                req.encoding = req.apparent_encoding
-                return req.text
+                return m3u8List
             else:
-                return req.text
+                m3u8List["index"] = req.content
+                return m3u8List
         except Exception as e:
             print(e)
 
@@ -97,6 +99,7 @@ class M3U8Downloader(object):
 
             for line in content:
                 if line[:10] == "#EXT-X-KEY":
+                    self.logger.debug(f"Find key: {line}")
                     if keyNo < numberOfKeys:
                         keyNo = keyNo + 1
                         reg = r"URI=\"([^\"].*?)\""
@@ -113,6 +116,7 @@ class M3U8Downloader(object):
                             dic = {"iv": result[0]}
                             results.append(dic)
                 elif len(line) > 0 and line[:1] != "#":
+                    self.logger.debug(f"Find ts: {line}")
                     if tsNo < numberOfTSs:
                         tsNo = tsNo + 1
                         dic = {"ts": line}
@@ -126,7 +130,6 @@ class M3U8Downloader(object):
         except Exception as e:
             self.logger.error(e)
 
-    # return ts file full path
     def saveToFile(self, content, filename, folderPath):
         if not os.path.exists(folderPath):
             os.makedirs(folderPath)
@@ -137,9 +140,14 @@ class M3U8Downloader(object):
 
         return result
 
+    def readFile(self, folderPath):
+        if os.path.exists(folderPath):
+            with open(folderPath, 'rb') as f:
+                return f.read()
+
     def decrypt(self, key, iv, content):
         self.logger.info("Start decrypting...")
-        cryptor = AES.new(key, AES.MODE_CBC, iv)
+        cryptor = AES.new(key=key, mode=AES.MODE_CBC, iv=iv)
         result = cryptor.decrypt(content)
         return result
 
