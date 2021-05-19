@@ -1,16 +1,16 @@
 # 测试工具
 本测试工具包含在项目开发过程中和开发有的一些测试用例。
 
-## download
-尝试下载apple的m3u8视频。主要步骤是：
+## download.py
 
-1. 拷贝粘贴m3u8的视频链接
-2. 下载m3u8的文件内容
-3. 解析m3u8文件内容并获取TS文件播放列表
-4. 保持所有的ts视频片段到tmp文件夹中
-5. 合并所有的ts视频片段为一个完整的视频
+普通的m3u8下载过程可以使用`download.py`直接下载。为了能够控制下载流程，该脚本通过命令行控制。例如：
 
-这里需要注意的是Apple官方网站对于视频做了保护，现在这个视频已经无法正常下载了。目测应该需要动态的获取m3u8文件的地址。
+```bash
+python download.py download "https://devstreaming-cdn.apple.com/videos/wwdc/2017/515vy4sl7iu70/515/hls_vod_mvp.m3u8" #下载m3u8文件到本地，会在当前目录创建一个tmp文件夹，并把m3u8文件保存在tmp文件夹中
+python download.py parse ./tmp/index.m3u8 -r "https://devstreaming-cdn.apple.com/videos/wwdc/2017/515vy4sl7iu70/515/hls_vod_mvp.m3u8" #下载index.m3u8中包含的key，iv和ts数据，并按照顺序从0-n保存。例如，0.key, 0.ts, 1.ts
+python download.py decrypt ./tmp/index.m3u8 -p f #解密ts文件，目前只支持默认的AES解密。解密后的ts文件保存为带前缀的文件。例如：f_0.ts, f_1.ts
+python download.py combine ./tmp/index.m3u8 -p f -d one.ts #把所有ts文件按照在index.m3u8中的顺序组合为一个one.ts文件。如果组合解密的文件，可以设置前缀确保脚本读取正确的文件。例如：f_0.ts, f_1.ts
+```
 
 ## ali-downloader-test
 阿里大学TS视频下载测试工具。可以根据以下步骤使用测试工具：
@@ -52,9 +52,10 @@ ffmpeg -y -i long.ts -c:v libx264 -c:a copy -bsf:a aac_adtstoasc long.mp4
 6. 合并TS文件
 
 ## combine-ts
+
 合并安卓平板电脑中腾讯视频极速版的离线视频文件。在安卓平板上安装腾讯视频极速版以后，下载需要看的视频。随后在平板电脑上安装Termux（虚拟Linux终端），并安装OpenSSH和Python。上传该项目后使用以下命令可以合并TS离线视频文件，并保存到相册文件夹中。
 
-```
+```bash
 ln -s qqvideolite /sdcard/Android/data/com.tencent.videolite.android/files/videos
 python combine-ts.py ~/qqvideolite/r075832cr9b.322003.hls /sdcard/DCIM/result.ts
 ```

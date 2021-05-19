@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-
+import argparse
 import logging
+import logging.handlers
 import traceback
 import os
 import sys
@@ -8,15 +9,35 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from m3u8downloader.downloader import M3U8Downloader
 
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+logFolder = os.path.join(__location__, 'logs')
+
+if not os.path.exists(logFolder):
+    os.makedirs(logFolder)
+
+logFileName = os.path.join(logFolder, 'm3u8.log')
 log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+fileHandler = logging.handlers.TimedRotatingFileHandler(logFileName, 'D', 1, 30)
+fileHandler.suffix = "%Y%m%d.log"
+formatter = logging.Formatter('%(asctime)s - %(module)s.%(funcName)s:%(lineno)d - %(levelname)s - %(message)s')
+fileHandler.setFormatter(formatter)
+log.addHandler(fileHandler)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+handler.setFormatter(formatter)
+log.addHandler(handler)
+
+
 downloader = M3U8Downloader(log)
 
 # set proxy
-# downloader.setProxy({
-#         'http': 'http://127.0.0.1:58591',
-#         'https': 'http://127.0.0.1:58591',
-#     }
-# )
+downloader.setProxy({
+        'http': 'http://127.0.0.1:58591',
+        'https': 'http://127.0.0.1:58591',
+    }
+)
 
 # downloader.setHeaders({
 #     "Accept": "*/*",
@@ -35,28 +56,96 @@ downloader = M3U8Downloader(log)
 #     "Referer" : "https://developer.apple.com/videos/play/wwdc2017/515/",
 # })
 
-# set the m3u8 url
-m3u8URL = "https://devstreaming-cdn.apple.com/videos/wwdc/2017/515vy4sl7iu70/515/hls_vod_mvp.m3u8"
-# download m3u8 data
-m3u8 = downloader.downloadM3U8(m3u8URL)
-# get ts video list
-ts_list = downloader.parseTS(m3u8)
-log.info("Found {} ts videos".format(len(ts_list)))
-# save all ts videos in tmp file
-tsFileList = []
-currentFolder = os.path.dirname(os.path.realpath(__file__))
-# you can change the start index for continuous downloading. E.g. ts_list[11:0]
-for item in ts_list[0:]:
-    if 'ts' in item:
-        ts = downloader.download(item['ts'])
-        filename = item['ts'].split("/")[-1].split(".ts")[0]
-        try:
-            result = downloader.saveToFile(ts, filename + ".ts", os.path.join(currentFolder, "tmp"))
-            tsFileList.append(result)
-        except:
-            traceback.print_exc()
-# combine all small ts video segments into a full video file one.ts
-fullTSFile = os.path.join(currentFolder, "one.ts")
-downloader.combineTS(tsFileList, fullTSFile)
+if __name__ == '__main__':
+    #读取命令行
+    parser = argparse.ArgumentParser(description='Start Download M3U8')
+    parser.add_argument('task', choices = ["download", "parse", "decrypt", "combine"], type = str, help='Download m3u8 file or parse m3u8 file.')
+    parser.add_argument('path', type = str, help='url or file path')
+    parser.add_argument('-r', type = str, dest='rootURL', help='root url of m3u8')
+    parser.add_argument('-p', type = str, dest='prefix', default="",  help='The short ts file prefix. E.g. "z" for "z_0.ts"')
+    parser.add_argument('-d', type = str, dest='finalPath', default="final.ts", help='The final long ts file path')
+    args = parser.parse_args()
 
-# in the end, we will get one.ts video file and we can use FFmpeg to convert ts to mp4. 
+    # download m3u8 file
+    if args.task == "download":
+        m3u8URL = args.path
+        m3u8FileName = m3u8URL.split("/")[-1]
+        m3u8List = downloader.downloadM3U8(m3u8URL)
+        if m3u8List and len(m3u8List) > 0:
+            for key in m3u8List.keys():
+                downloader.saveToFile(m3u8List[key], f"{key}.m3u8", os.path.join(__location__, "tmp"))
+
+    # download all data in m3u8, including key, iv, and ts
+    if args.task == "parse" and args.rootURL:
+        filePath = args.path
+        downloader.rootURL = args.rootURL
+        m3u8 = downloader.readFile(filePath).decode('utf-8')
+        ts_list = downloader.parseTS(m3u8)
+        
+        # you can change the start index for continuous downloading. E.g. ts_list[11:0]
+        tsList = []
+
+        index = 0
+        for item in ts_list[0:]:
+            log.debug(f"Download and save item@{index}")
+            index += 1
+            if 'ts' in item:
+                ts = downloader.download(item['ts'])
+                result = downloader.saveToFile(ts, f"{len(tsList)}.ts", os.path.join(__location__, "tmp"))
+                tsList.append(result)
+
+            if 'key' in item:
+                key = downloader.download(item['key'])
+                result = downloader.saveToFile(key, f"{len(tsList)}.key", os.path.join(__location__, "tmp"))
+
+            if 'iv' in item:
+                iv = downloader.download(item['iv'])
+                result = downloader.saveToFile(iv, f"{len(tsList)}.iv", os.path.join(__location__, "tmp"))
+
+    if args.task == "decrypt":
+        prefix = args.prefix
+        filePath = args.path
+        m3u8 = downloader.readFile(filePath).decode('utf-8')
+        ts_list = downloader.parseTS(m3u8)
+        currentKey = None
+        currentIv = None
+        tsList = []
+        for item in ts_list[0:]:
+            if 'ts' in item:
+                tsIndex = len(tsList)
+                tsPath = os.path.join(__location__, "tmp", f"{tsIndex}.ts")
+                ts = downloader.readFile(tsPath)
+
+                keyPath = os.path.join(__location__, "tmp", f"{tsIndex}.key")
+                key = downloader.readFile(keyPath)
+                if key:
+                    currentKey = key
+
+                ivPath = os.path.join(__location__, "tmp", f"{tsIndex}.iv")
+                iv = downloader.readFile(ivPath)
+                if iv:
+                    currentIv = iv
+
+                if currentKey:
+                    out = downloader.decrypt(currentKey, currentIv, ts)
+                    tsPath = downloader.saveToFile(out, f"f_{tsIndex}.ts", os.path.join(__location__, "tmp"))
+                
+                tsList.append(tsPath)
+
+
+
+    if args.task == "combine":
+        prefix = f"{args.prefix}_" if len(args.prefix) > 0 else ""
+        fullFilePath = args.finalPath
+        filePath = args.path
+        m3u8 = downloader.readFile(filePath).decode('utf-8')
+        ts_list = downloader.parseTS(m3u8)
+
+        tsList = []
+        for item in ts_list[0:]:
+            if 'ts' in item:
+                tsIndex = len(tsList)
+                tsPath = os.path.join(__location__, "tmp", f"{prefix}{tsIndex}.ts")
+                tsList.append(tsPath)
+
+        downloader.combineTS(tsList, fullFilePath)
