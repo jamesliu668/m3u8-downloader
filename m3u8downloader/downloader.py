@@ -35,8 +35,8 @@ class M3U8Downloader(object):
             req.raise_for_status()
             req.encoding = req.apparent_encoding
 
+            m3u8List = {}
             if req.text.find("#EXT-X-STREAM-INF") != -1:
-                m3u8List = {}
                 content = req.text.split('\n')
                 currentBW = None
                 currentName = None
@@ -170,17 +170,15 @@ class M3U8Downloader(object):
             return rootURLObj.scheme + ":" + url
         elif url[:2] == "..":
             count = url.count("../")
-            spliturl = url.split("/")
-            if count <= (len(spliturl) - count):
-                newurl = rootURLObj.scheme + "://" + rootURLObj.netloc
-                for i in range(count):
-                    newurl = newurl + "/" + spliturl[i+count]
-                for i in range(len(spliturl) - count*2):
-                    newurl = newurl + "/" + spliturl[count*2+i]
-                return newurl
+            rootURLParts = self.rootURL.split("/")
+
+            # http://jmsliu.cn,  len=3
+            # http://jmsliu.cn/, len=4
+            # http://jmsliu.cn/video/index.html, len=5
+            if len(rootURLParts) - 4 >= count:
+                return '/'.join(rootURLParts[:-(count + 1)]) + "/" + url.replace("../", "")
             else:
-                newurl= rootURLObj.scheme + "://" + rootURLObj.netloc + "/" + url.replace("../","")
-                return newurl
+                return rootURLObj.scheme + "://" + rootURLObj.netloc + "/" + url.replace("../", "")
         elif url[:1] == "/":
             return rootURLObj.scheme + "://" + rootURLObj.netloc + url
         else:

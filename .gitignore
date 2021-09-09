@@ -1,0 +1,13 @@
+.DS_Store
+
+# Editor directories and files
+.idea
+.vscode
+tmp
+tmp1
+tmp2
+tmp3
+logs
+*.pyc
+*.ts
+*.zip

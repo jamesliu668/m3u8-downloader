@@ -8,20 +8,34 @@
 git clone https://github.com/jamesliu668/m3u8-downloader.git
 ```
 
-在项目中import该工具包
-
-```python
-from m3u8downloader.downloader import M3U8Downloader
-```
-
 下载M3U8文件和TS文件
 
-```python
-log = logging.getLogger()
-downloader = M3U8Downloader(log)
-m3u8URL = "replace with your m3u8 file url"
-m3u8 = downloader.downloadM3U8(m3u8URL)
-downloader.downloadTS(m3u8, ".")
+```bash
+#下载m3u8视频流列表文件
+python ./test/download.py download https://a.com/video/m3u8/index.m3u8
+#下载m3u8视频流列表文件中的视频片段文件（可能加密）
+python ./test/download.py parse ./test/tmp/index.m3u8 -r https://a.com/video/m3u8/index.m3u8
+#解密视频片段文件，解密后的文件加前缀prefix_0.ts，避免覆盖原始文件。如果文件无加密，执行该命令不会生成prefix_0.ts文件
+python ./test/download.py decrypt ./test/tmp/index.m3u8 -p prefix_
+#合并片段文件，文件以prefix_作为前缀，例如prefix_0.ts。如果没有前缀，可以参略-p参数。
+python ./test/download.py combine ./test/tmp/index.m3u8 -p prefix_ -d ./test/one.ts
+```
+
+## MacOS使用zip压缩视频
+如果在MacOS中需要把视频打包压缩成zip文件，使用如下命令行：
+```bash
+zip -e one.zip ./test/one.ts
+```
+
+## MacOS中使用FFmpeg转换文件格式
+如果想要将TS文件转换文件格式，比如转换为mp4。可以在Mac上安装FFmpeg并用最简单的方式做格式转换。如果对于编码有要求，还需要大家自己去网上搜索一下FFmpeg的相关参数。
+```bash
+#搜索ffmpeg
+brew search ffmpeg
+#安装ffmpeg
+brew install ffmpeg
+#视频格式转换
+ffmpeg -i ./test/one.ts -c:v copy -c:a copy ./test/one.mp4
 ```
 
 ## 更多学习资料

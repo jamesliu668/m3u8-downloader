@@ -33,11 +33,11 @@ log.addHandler(handler)
 downloader = M3U8Downloader(log)
 
 # set proxy
-downloader.setProxy({
-        'http': 'http://127.0.0.1:58591',
-        'https': 'http://127.0.0.1:58591',
-    }
-)
+# downloader.setProxy({
+#         'http': 'http://127.0.0.1:58591',
+#         'https': 'http://127.0.0.1:58591',
+#     }
+# )
 
 # downloader.setHeaders({
 #     "Accept": "*/*",
@@ -128,14 +128,14 @@ if __name__ == '__main__':
 
                 if currentKey:
                     out = downloader.decrypt(currentKey, currentIv, ts)
-                    tsPath = downloader.saveToFile(out, f"f_{tsIndex}.ts", os.path.join(__location__, "tmp"))
+                    tsPath = downloader.saveToFile(out, f"{prefix}{tsIndex}.ts", os.path.join(__location__, "tmp"))
                 
                 tsList.append(tsPath)
 
 
 
     if args.task == "combine":
-        prefix = f"{args.prefix}_" if len(args.prefix) > 0 else ""
+        prefix = args.prefix if len(args.prefix) > 0 else ""
         fullFilePath = args.finalPath
         filePath = args.path
         m3u8 = downloader.readFile(filePath).decode('utf-8')
