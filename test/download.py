@@ -33,11 +33,11 @@ log.addHandler(handler)
 downloader = M3U8Downloader(log)
 
 # set proxy
-# downloader.setProxy({
-#         'http': 'http://127.0.0.1:58591',
-#         'https': 'http://127.0.0.1:58591',
-#     }
-# )
+downloader.setProxy({
+        'http': 'http://127.0.0.1:7890',
+        'https': 'http://127.0.0.1:7890',
+    }
+)
 
 # downloader.setHeaders({
 #     "Accept": "*/*",
@@ -61,6 +61,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start Download M3U8')
     parser.add_argument('task', choices = ["download", "parse", "decrypt", "combine"], type = str, help='Download m3u8 file or parse m3u8 file.')
     parser.add_argument('path', type = str, help='url or file path')
+    parser.add_argument('-s', type = str, dest='source', help='source folder where ts files should be read')
     parser.add_argument('-r', type = str, dest='rootURL', help='root url of m3u8')
     parser.add_argument('-p', type = str, dest='prefix', default="",  help='The short ts file prefix. E.g. "z" for "z_0.ts"')
     parser.add_argument('-d', type = str, dest='finalPath', default="final.ts", help='The final long ts file path')
@@ -128,7 +129,7 @@ if __name__ == '__main__':
 
                 if currentKey:
                     out = downloader.decrypt(currentKey, currentIv, ts)
-                    tsPath = downloader.saveToFile(out, f"{prefix}{tsIndex}.ts", os.path.join(__location__, "tmp"))
+                    tsPath = downloader.saveToFile(out, f"{prefix}{tsIndex}.ts", os.path.join(__location__, "decrypt"))
                 
                 tsList.append(tsPath)
 
@@ -137,6 +138,7 @@ if __name__ == '__main__':
     if args.task == "combine":
         prefix = args.prefix if len(args.prefix) > 0 else ""
         fullFilePath = args.finalPath
+        source = args.source
         filePath = args.path
         m3u8 = downloader.readFile(filePath).decode('utf-8')
         ts_list = downloader.parseTS(m3u8)
@@ -145,7 +147,7 @@ if __name__ == '__main__':
         for item in ts_list[0:]:
             if 'ts' in item:
                 tsIndex = len(tsList)
-                tsPath = os.path.join(__location__, "tmp", f"{prefix}{tsIndex}.ts")
+                tsPath = os.path.join(__location__, source, f"{prefix}{tsIndex}.ts")
                 tsList.append(tsPath)
 
         downloader.combineTS(tsList, fullFilePath)

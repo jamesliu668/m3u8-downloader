@@ -8,8 +8,12 @@
 ```bash
 python download.py download "https://devstreaming-cdn.apple.com/videos/wwdc/2017/515vy4sl7iu70/515/hls_vod_mvp.m3u8" #下载m3u8文件到本地，会在当前目录创建一个tmp文件夹，并把m3u8文件保存在tmp文件夹中
 python download.py parse ./tmp/index.m3u8 -r "https://devstreaming-cdn.apple.com/videos/wwdc/2017/515vy4sl7iu70/515/hls_vod_mvp.m3u8" #下载index.m3u8中包含的key，iv和ts数据，并按照顺序从0-n保存。例如，0.key, 0.ts, 1.ts
-python download.py decrypt ./tmp/index.m3u8 -p f #解密ts文件，目前只支持默认的AES解密。解密后的ts文件保存为带前缀的文件。例如：f_0.ts, f_1.ts
-python download.py combine ./tmp/index.m3u8 -p f -d one.ts #把所有ts文件按照在index.m3u8中的顺序组合为一个one.ts文件。如果组合解密的文件，可以设置前缀确保脚本读取正确的文件。例如：f_0.ts, f_1.ts
+
+#解密ts文件，目前只支持默认的AES解密。解密后的ts文件保存为带前缀的文件。例如：f_0.ts, f_1.ts。解密文件保存在decrypt文件夹中。
+python download.py decrypt ./tmp/index.m3u8 -p f 
+
+# 读取index.m3u8中的所有ts文件分片记录，按照顺序从decrypt文件夹中读取ts文件（可以设置前缀确保脚本读取正确的文件。例如：f_0.ts, f_1.ts），组合为一个one.ts文件。
+python download.py combine ./tmp/index.m3u8 -s ./decrypt -p f -d one.ts 
 ```
 
 ## ali-downloader-test
