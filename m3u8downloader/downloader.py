@@ -8,6 +8,7 @@ import requests
 from urllib.parse import urlparse
 from keydecryptor.ali import AliKeyDecryptor
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 
 class M3U8Downloader(object):
     logger = None
@@ -148,7 +149,13 @@ class M3U8Downloader(object):
     def decrypt(self, key, iv, content):
         self.logger.info("Start decrypting...")
         cryptor = AES.new(key=key, mode=AES.MODE_CBC, iv=iv)
-        result = cryptor.decrypt(content)
+        try:
+            result = cryptor.decrypt(content)
+        except Exception as e:
+            logging.error(e)
+            if str(e) == 'Data must be padded to 16 byte boundary in CBC mode':
+                result = cryptor.decrypt(pad(content, 16))
+
         return result
 
     def combineTS(self, tsList, targetTSFileName):
