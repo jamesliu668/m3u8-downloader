@@ -18,7 +18,8 @@ python ./test/download.py parse ./test/tmp/index.m3u8 -r https://a.com/video/m3u
 #解密视频片段文件，解密后的文件加前缀prefix_0.ts，避免覆盖原始文件。如果文件无加密，执行该命令不会生成prefix_0.ts文件
 python ./test/download.py decrypt ./test/tmp/index.m3u8 -p prefix_
 #合并片段文件，文件以prefix_作为前缀，例如prefix_0.ts。如果没有前缀，可以参略-p参数。
-python ./test/download.py combine ./test/tmp/index.m3u8 -p prefix_ -d ./test/one.ts
+python ./test/download.py combine ./test/tmp/index.m3u8 -s ./test/tmp -p prefix_ -d ./test/one.ts
+
 ```
 
 ## MacOS使用zip压缩视频
